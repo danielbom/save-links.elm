@@ -1,0 +1,26 @@
+{
+  "engines": {
+    "npm": "please-use-yarn",
+    "yarn": ">= 1.19.1"
+  },
+  "name": "save-links",
+  "version": "1.0.0",
+  "main": "index.js",
+  "license": "MIT",
+  "scripts": {
+    "build": "elm make src/Main.elm --output public/main.js --debug",
+    "build:prod": "./scripts/optimize.sh src/Main.elm"
+  },
+  "devDependencies": {
+    "css-loader": "^5.2.4",
+    "elm-css-webpack-loader": "^3.4.0",
+    "elm-webpack-loader": "^8.0.0",
+    "file-loader": "^6.2.0",
+    "html-webpack-plugin": "^5.3.1",
+    "style-loader": "^2.0.0",
+    "url-loader": "^4.1.1",
+    "webpack": "^5.36.2",
+    "webpack-cli": "^4.6.0",
+    "webpack-dev-server": "^3.11.2"
+  }
+}
