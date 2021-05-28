@@ -102,10 +102,13 @@ a {
   content: "# ";
 }
 
-/* (.group__category .btn) replace (.btn:hover) */
+.sidebar__links div,
+.group__category div {
+  margin-bottom: 8px;
+}
+
 .group__category div {
   color: var(--blue);
-  margin-bottom: 8px;
 }
 .sidebar__describe {
   padding: 0;

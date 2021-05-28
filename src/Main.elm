@@ -138,6 +138,43 @@ view model =
         ]
 
 
+slug : String -> String
+slug text =
+    let
+        toString ch =
+            String.cons ch ""
+
+        pairReplace ( chReplaces, letters ) currText =
+            String.foldl (\ch -> String.replace (toString ch) chReplaces)
+                currText
+                letters
+
+        -- https://stackoverflow.com/questions/990904/remove-accents-diacritics-in-a-string-in-javascript
+        normalize initialText =
+            List.foldl pairReplace
+                initialText
+                [ ( "a", "áàâãå" )
+                , ( "e", "éèẽê" )
+                , ( "i", "ìíĩî" )
+                , ( "o", "óòõô" )
+                , ( "u", "úùũû" )
+                , ( "c", "ç" )
+                , ( "n", "ñ" )
+                , ( "y", "ýÿ" )
+                , ( "-", " " )
+                ]
+    in
+    text
+        |> String.toLower
+        |> normalize
+        |> (++) "#"
+
+
+slugify : String -> List (Html Msg) -> Html Msg
+slugify slugText children =
+    a [ slugText |> slug |> href ] children
+
+
 categorySidebar : Category -> Html Msg
 categorySidebar category =
     let
@@ -157,8 +194,10 @@ categorySidebar category =
         title =
             category.name ++ " (" ++ valuesLengthStr ++ ")"
     in
-    div [ class categoryClass, onClick (ChangeCategory category) ]
-        [ text title ]
+    slugify category.name
+        [ div [ class categoryClass, onClick (ChangeCategory category) ]
+            [ text title ]
+        ]
 
 
 sidebar : Model -> Html Msg
@@ -195,16 +234,16 @@ sidebar model =
         , div [ class "sidebar__item sidebar__links" ]
             [ div [ class "sidebar__subtitle" ]
                 [ text "Links" ]
-            , div
-                [ class "sidebar__no-category btn"
-                , onClick WithoutCategory
+            , slugify "Sem categoria"
+                [ div
+                    [ class "btn", onClick WithoutCategory ]
+                    [ text "Sem categoria" ]
                 ]
-                [ text "Sem categoria" ]
-            , div
-                [ class "sidebar__favorities btn"
-                , onClick FavoriteCategory
+            , slugify "Favoritos"
+                [ div
+                    [ class "btn", onClick FavoriteCategory ]
+                    [ text "Favoritos" ]
                 ]
-                [ text "Favoritos" ]
             ]
         , div [ class "sidebar__item sidebar__categories" ]
             [ div [ class "sidebar__subtitle" ]
