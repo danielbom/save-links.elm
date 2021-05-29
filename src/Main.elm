@@ -170,9 +170,9 @@ slug text =
         |> (++) "#"
 
 
-slugify : String -> List (Html Msg) -> Html Msg
-slugify slugText children =
-    a [ slugText |> slug |> href ] children
+slugify : String -> Html Msg -> Html Msg
+slugify slugText child =
+    a [ slugText |> slug |> href ] [ child ]
 
 
 categorySidebar : Category -> Html Msg
@@ -185,19 +185,24 @@ categorySidebar category =
             else
                 "btn"
 
-        subCategoryCountLinks =
-            List.sum <| List.map (\sc -> List.length sc.values) category.subCategories
+        subCategoryLinksCount =
+            category.subCategories
+                |> List.map (.values >> List.length)
+                |> List.sum
 
-        valuesLengthStr =
-            String.fromInt <| List.length category.values + subCategoryCountLinks
+        totalLinksCount =
+            category.values
+                |> List.length
+                |> (+) subCategoryLinksCount
+                |> String.fromInt
 
         title =
-            category.name ++ " (" ++ valuesLengthStr ++ ")"
+            category.name ++ " (" ++ totalLinksCount ++ ")"
     in
-    slugify category.name
-        [ div [ class categoryClass, onClick (ChangeCategory category) ]
+    slugify category.name <|
+        div
+            [ class categoryClass, onClick (ChangeCategory category) ]
             [ text title ]
-        ]
 
 
 sidebar : Model -> Html Msg
@@ -211,116 +216,148 @@ sidebar model =
                 "🌒 Dark Mode"
 
         infoText =
-            (String.fromInt <| List.length model.allLinks)
+            (model.allLinks |> List.length |> String.fromInt)
                 ++ " links e "
-                ++ (String.fromInt <| List.length model.categories)
+                ++ (model.categories |> List.length |> String.fromInt)
                 ++ " categorias"
+
+        titleLink =
+            a
+                [ class "sidebar__item sidebar__title"
+                , target "_blank"
+                , href "https://repl.it/@danielbom/SaveLinks"
+                ]
+                [ text "Save Links" ]
+
+        toggleDarkModeButton =
+            div [ class "sidebar__item" ]
+                [ div
+                    [ class "btn", onClick ToggleDarkMode ]
+                    [ text darkOrLightMode ]
+                ]
+
+        specialCategories =
+            div [ class "sidebar__item sidebar__links" ]
+                [ div
+                    [ class "sidebar__subtitle" ]
+                    [ text "Links" ]
+                , slugify "Sem categoria" <|
+                    div
+                        [ class "btn", onClick WithoutCategory ]
+                        [ text "Sem categoria" ]
+                , slugify "Favoritos" <|
+                    div
+                        [ class "btn", onClick FavoriteCategory ]
+                        [ text "Favoritos" ]
+                ]
+
+        categoriesList =
+            div [ class "sidebar__item sidebar__categories" ]
+                [ div
+                    [ class "sidebar__subtitle" ]
+                    [ text "Categorias" ]
+                , div
+                    [ class "sidebar__category-add btn" ]
+                    [ text "Adicionar categoria (+)" ]
+                , div [ class "group__category" ] <|
+                    List.map categorySidebar model.categories
+                ]
+
+        plusSection =
+            div [ class "sidebar__item sidebar__plus" ]
+                [ div [ class "sidebar__subtitle" ] [ text "Main" ]
+                , div [ class "btn" ] [ text "Rascunho" ]
+                , div [ class "btn" ] [ text "Sair" ]
+                ]
+
+        informations =
+            div [ class "sidebar__item sidebar__describe" ]
+                [ div [] [ text infoText ] ]
     in
     node "sidebar"
         [ class "sidebar" ]
-        [ a
-            [ class "sidebar__item sidebar__title"
-            , target "_blank"
-            , href "https://repl.it/@danielbom/SaveLinks"
-            ]
-            [ text "Save Links" ]
-        , div [ class "sidebar__item" ]
-            [ div
-                [ class "btn"
-                , onClick ToggleDarkMode
-                ]
-                [ text darkOrLightMode ]
-            ]
-        , div [ class "sidebar__item sidebar__links" ]
-            [ div [ class "sidebar__subtitle" ]
-                [ text "Links" ]
-            , slugify "Sem categoria"
-                [ div
-                    [ class "btn", onClick WithoutCategory ]
-                    [ text "Sem categoria" ]
-                ]
-            , slugify "Favoritos"
-                [ div
-                    [ class "btn", onClick FavoriteCategory ]
-                    [ text "Favoritos" ]
-                ]
-            ]
-        , div [ class "sidebar__item sidebar__categories" ]
-            [ div [ class "sidebar__subtitle" ]
-                [ text "Categorias" ]
-            , div [ class "sidebar__category-add btn" ]
-                [ text "Adicionar categoria (+)" ]
-            , div [ class "group__category" ] <|
-                List.map categorySidebar model.categories
-            ]
-        , div [ class "sidebar__item sidebar__plus" ]
-            [ div [ class "sidebar__subtitle" ]
-                [ text "Main" ]
-            , div [ class "btn" ]
-                [ text "Rascunho" ]
-            , div [ class "btn" ]
-                [ text "Sair" ]
-            ]
-        , div [ class "sidebar__item sidebar__describe" ]
-            [ div []
-                [ text infoText ]
-            ]
+        [ titleLink
+        , toggleDarkModeButton
+        , specialCategories
+        , categoriesList
+        , plusSection
+        , informations
         ]
+
+
+favicon : String -> String
+favicon url =
+    -- TODO: Optimize url to search icon
+    "https://www.google.com/s2/favicons?domain=" ++ url
 
 
 linkView : Link -> Html Msg
 linkView { title, url, favorite } =
     let
+        icon =
+            div [ class "link__icon" ]
+                [ img [ alt title, src (favicon url) ] [] ]
+
         titleClass =
             if favorite then
                 "link__title link__favorite"
 
             else
                 "link__title"
+
+        contentLink =
+            div [ class titleClass ] [ text title ]
     in
     a [ target "_blank", class "link", href url ]
-        [ div [ class "link__icon" ]
-            [ img
-                [ alt title
-                , src ("https://www.google.com/s2/favicons?domain=" ++ url)
-                ]
-                []
-            ]
-        , div [ class titleClass ] [ text title ]
-        ]
+        [ icon, contentLink ]
 
 
 linksView : List Link -> String -> Html Msg
 linksView currentLinks className =
-    div [ class className ]
-        (List.map linkView currentLinks)
+    div [ class className ] <|
+        List.map linkView currentLinks
 
 
 subCategoryView : SubCategory -> Html Msg
 subCategoryView { name, values, show } =
-    section [ class "sub-category__list" ]
-        [ div [ class "sub-category" ]
-            [ div [ class "sub-category__icon" ] []
-            , button
+    let
+        subCategoryLinksCount =
+            values |> List.length |> String.fromInt
+
+        subCategoryName =
+            name ++ " (" ++ subCategoryLinksCount ++ ")"
+
+        subCategoryButton =
+            button
                 [ class "sub-category__title"
                 , onClick (ToggleSubCategory name)
                 ]
-                [ text (name ++ " (" ++ (List.length values |> String.fromInt) ++ ")")
-                ]
-            ]
-        , div [ class "sub-category__items" ] <|
-            if show then
-                List.map linkView values
+                [ text subCategoryName ]
 
-            else
-                []
-        ]
+        subCategoryHeader =
+            div
+                [ class "sub-category" ]
+                [ div [ class "sub-category__icon" ] []
+                , subCategoryButton
+                ]
+
+        subCategoryItems =
+            div [ class "sub-category__items" ] <|
+                if show then
+                    List.map linkView values
+
+                else
+                    []
+    in
+    section
+        [ class "sub-category__list" ]
+        [ subCategoryHeader, subCategoryItems ]
 
 
 subCategoriesView : List SubCategory -> Html Msg
 subCategoriesView subCategories =
-    div [ class "group__sub-category" ]
-        (List.map subCategoryView subCategories)
+    div [ class "group__sub-category" ] <|
+        List.map subCategoryView subCategories
 
 
 searchErrorClass : Model -> String
@@ -334,30 +371,58 @@ searchErrorClass model =
 
 content : Model -> Html Msg
 content model =
-    main_ []
-        [ div
-            [ class ("row-block input__search" ++ searchErrorClass model) ]
-            [ input
-                [ placeholder "Buscar"
-                , type_ "text"
-                , spellcheck False
-                , onInput UpdateSearch
-                , type_ "text"
-                , list "links-title"
-                , id "input-search"
+    let
+        searchBarClass =
+            "row-block input__search" ++ searchErrorClass model
+
+        searchBar =
+            div
+                [ class searchBarClass ]
+                [ input
+                    [ placeholder "Buscar"
+                    , type_ "text"
+                    , spellcheck False
+                    , onInput UpdateSearch
+                    , type_ "text"
+                    , list "links-title"
+                    , id "input-search"
+                    ]
+                    []
                 ]
-                []
-            ]
-        , div [ class "row-block input__url" ]
-            [ input [ placeholder "http:// ou https://", type_ "text" ] []
-            ]
-        , lazy2 linksView model.searchLinks "group__searched"
-        , div [ class "row-block main__category" ]
-            [ text model.currentTitle
-            ]
-        , lazy subCategoriesView model.currentSubCategories
-        , lazy2 linksView model.currentLinks "group__link"
-        , div [ class "row-block" ] []
+
+        inputAdd =
+            div [ class "row-block input__url" ]
+                [ input
+                    [ placeholder "http:// ou https://"
+                    , type_ "text"
+                    ]
+                    []
+                ]
+
+        searchResult =
+            lazy2 linksView model.searchLinks "group__searched"
+
+        currentCategoryTitle =
+            div [ class "row-block main__category" ]
+                [ text model.currentTitle ]
+
+        subCategoriesList =
+            lazy subCategoriesView model.currentSubCategories
+
+        baseLinksView =
+            lazy2 linksView model.currentLinks "group__link"
+
+        spaceBlock =
+            div [ class "row-block" ] []
+    in
+    main_ []
+        [ searchBar
+        , inputAdd
+        , searchResult
+        , currentCategoryTitle
+        , subCategoriesList
+        , baseLinksView
+        , spaceBlock
         ]
 
 
@@ -365,8 +430,8 @@ content model =
 -- Update
 
 
-tranformSearchLink : Link -> Link
-tranformSearchLink link =
+tranformSearchLinkTitle : Link -> Link
+tranformSearchLinkTitle link =
     let
         locationIdentifier =
             case ( link.category, link.subCategory ) of
@@ -391,6 +456,11 @@ updateSearchedLinks model =
         q =
             String.toLower model.search
 
+        searchFilter link =
+            link.title
+                |> String.toLower
+                |> String.contains q
+
         searchLength =
             String.length model.search
     in
@@ -401,10 +471,9 @@ updateSearchedLinks model =
         model.searchLinks
 
     else
-        List.map tranformSearchLink <|
-            List.filter
-                (\link -> String.toLower link.title |> String.contains q)
-                model.allLinks
+        model.allLinks
+            |> List.filter searchFilter
+            |> List.map tranformSearchLinkTitle
 
 
 toggleSubCategory : String -> SubCategory -> SubCategory
@@ -421,7 +490,11 @@ toggleSubCategory subCategoryName subCategory =
 
 hasSearchLinks : Model -> Bool
 hasSearchLinks model =
-    if String.length model.search >= 4 then
+    let
+        searchLengthIsEnough =
+            String.length model.search >= 4
+    in
+    if searchLengthIsEnough then
         List.length model.searchLinks > 0
 
     else
@@ -477,7 +550,9 @@ update msg model =
             )
 
         ToggleDarkMode ->
-            ( { model | darkModeEnable = not model.darkModeEnable }
+            ( { model
+                | darkModeEnable = not model.darkModeEnable
+              }
             , toggleDarkMode (not model.darkModeEnable)
             )
 
@@ -501,7 +576,9 @@ update msg model =
         DebounceSearch deboundMsg ->
             let
                 changeSearchList s =
-                    Task.perform (\_ -> ChangeSearchList) (Task.succeed s)
+                    Task.perform
+                        (\_ -> ChangeSearchList)
+                        (Task.succeed s)
 
                 ( debounce, cmd ) =
                     Debounce.update
@@ -510,16 +587,18 @@ update msg model =
                         deboundMsg
                         model.debounceSearch
             in
-            ( { model | debounceSearch = debounce }
-            , cmd
-            )
+            ( { model | debounceSearch = debounce }, cmd )
 
         ChangeSearchList ->
             let
                 newModel =
-                    { model | searchLinks = updateSearchedLinks model }
+                    { model
+                        | searchLinks = updateSearchedLinks model
+                    }
             in
-            ( { newModel | searchLinksFound = hasSearchLinks newModel }
+            ( { newModel
+                | searchLinksFound = hasSearchLinks newModel
+              }
             , Cmd.none
             )
 
@@ -528,7 +607,9 @@ update msg model =
             -- Blur the input if "ESC" was pressed
             let
                 doBlur =
-                    Task.attempt (\_ -> NoOp) (Dom.blur "input-search")
+                    Task.attempt
+                        (\_ -> NoOp)
+                        (Dom.blur "input-search")
             in
             ( { model | searchOnFocus = False }, doBlur )
 
@@ -540,7 +621,11 @@ update msg model =
                         ( False, Cmd.none )
 
                     else
-                        ( True, Task.attempt (\_ -> NoOp) (Dom.focus "input-search") )
+                        ( True
+                        , Task.attempt
+                            (\_ -> NoOp)
+                            (Dom.focus "input-search")
+                        )
             in
             ( { model | searchOnFocus = focus }, doFocus )
 
