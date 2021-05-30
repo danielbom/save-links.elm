@@ -70,6 +70,8 @@ type alias Model =
     , searchLinks : List Link
     , searchLinksFound : Bool
     , debounceSearch : Debounce String
+
+    -- Dark Mode
     , darkModeEnable : Bool
     }
 
@@ -373,13 +375,14 @@ content model =
 
         searchBar =
             div
-                [ class searchBarClass, id "input-search" ]
+                [ class searchBarClass ]
                 [ input
                     [ placeholder "Buscar"
                     , type_ "text"
                     , spellcheck False
                     , onInput UpdateSearch
                     , type_ "text"
+                    , id "input-search"
                     ]
                     []
                 ]
