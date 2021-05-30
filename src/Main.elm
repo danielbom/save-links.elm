@@ -7,7 +7,7 @@ import Debounce exposing (Debounce)
 import Html exposing (..)
 import Html.Attributes exposing (..)
 import Html.Events exposing (onClick, onInput)
-import Html.Lazy exposing (lazy, lazy2)
+import Html.Lazy exposing (lazy)
 import Json.Decode as Decode
 import Platform.Cmd exposing (Cmd)
 import Task
@@ -132,7 +132,7 @@ init flags =
 
 view : Model -> Html Msg
 view model =
-    div []
+    div [ id "page" ]
         [ sidebar model
         , content model
         ]
@@ -178,13 +178,6 @@ slugify slugText child =
 categorySidebar : Category -> Html Msg
 categorySidebar category =
     let
-        categoryClass =
-            if category.selected then
-                "btn category__select"
-
-            else
-                "btn"
-
         subCategoryLinksCount =
             category.subCategories
                 |> List.map (.values >> List.length)
@@ -201,7 +194,7 @@ categorySidebar category =
     in
     slugify category.name <|
         div
-            [ class categoryClass, onClick (ChangeCategory category) ]
+            [ class "btn category__title", onClick (ChangeCategory category) ]
             [ text title ]
 
 
@@ -223,59 +216,66 @@ sidebar model =
 
         titleLink =
             a
-                [ class "sidebar__item sidebar__title"
+                [ id "page-title"
+                , class "pointer"
                 , target "_blank"
                 , href "https://repl.it/@danielbom/SaveLinks"
                 ]
                 [ text "Save Links" ]
 
         toggleDarkModeButton =
-            div [ class "sidebar__item" ]
+            div []
                 [ div
-                    [ class "btn", onClick ToggleDarkMode ]
+                    [ class "pointer btn"
+                    , onClick ToggleDarkMode
+                    ]
                     [ text darkOrLightMode ]
                 ]
 
         specialCategories =
-            div [ class "sidebar__item sidebar__links" ]
+            div []
                 [ div
                     [ class "sidebar__subtitle" ]
                     [ text "Links" ]
-                , slugify "Sem categoria" <|
-                    div
-                        [ class "btn", onClick WithoutCategory ]
-                        [ text "Sem categoria" ]
-                , slugify "Favoritos" <|
-                    div
-                        [ class "btn", onClick FavoriteCategory ]
-                        [ text "Favoritos" ]
+                , div [ class "sidebar__group" ]
+                    [ slugify "Sem categoria" <|
+                        div
+                            [ class "pointer btn", onClick WithoutCategory ]
+                            [ text "Sem categoria" ]
+                    , slugify "Favoritos" <|
+                        div
+                            [ class "pointer btn", onClick FavoriteCategory ]
+                            [ text "Favoritos" ]
+                    ]
                 ]
 
         categoriesList =
-            div [ class "sidebar__item sidebar__categories" ]
+            div []
                 [ div
                     [ class "sidebar__subtitle" ]
                     [ text "Categorias" ]
                 , div
-                    [ class "sidebar__category-add btn" ]
+                    [ id "category-add", class "pointer" ]
                     [ text "Adicionar categoria (+)" ]
-                , div [ class "group__category" ] <|
+                , div [ class "sidebar__group" ] <|
                     List.map categorySidebar model.categories
                 ]
 
         plusSection =
-            div [ class "sidebar__item sidebar__plus" ]
+            div [ id "plus-tools" ]
                 [ div [ class "sidebar__subtitle" ] [ text "Main" ]
-                , div [ class "btn" ] [ text "Rascunho" ]
-                , div [ class "btn" ] [ text "Sair" ]
+                , div [ class "sidebar__group" ]
+                    [ div [ class "pointer btn" ] [ text "Rascunho" ]
+                    , div [ class "pointer btn" ] [ text "Sair" ]
+                    ]
                 ]
 
         informations =
-            div [ class "sidebar__item sidebar__describe" ]
-                [ div [] [ text infoText ] ]
+            div [ id "descriptions" ]
+                [ text infoText ]
     in
-    node "sidebar"
-        [ class "sidebar" ]
+    div
+        [ id "sidebar" ]
         [ titleLink
         , toggleDarkModeButton
         , specialCategories
@@ -312,10 +312,9 @@ linkView { title, url, favorite } =
         [ icon, contentLink ]
 
 
-linksView : List Link -> String -> Html Msg
-linksView currentLinks className =
-    div [ class className ] <|
-        List.map linkView currentLinks
+linksView : List Link -> Html Msg
+linksView currentLinks =
+    div [] <| List.map linkView currentLinks
 
 
 subCategoryView : SubCategory -> Html Msg
@@ -329,7 +328,7 @@ subCategoryView { name, values, show } =
 
         subCategoryButton =
             button
-                [ class "sub-category__title"
+                [ class "sub-category__title pointer btn"
                 , onClick (ToggleSubCategory name)
                 ]
                 [ text subCategoryName ]
@@ -337,7 +336,9 @@ subCategoryView { name, values, show } =
         subCategoryHeader =
             div
                 [ class "sub-category" ]
-                [ div [ class "sub-category__icon" ] []
+                [ div
+                    [ class "sub-category__icon" ]
+                    [ div [ class "folder" ] [] ]
                 , subCategoryButton
                 ]
 
@@ -349,7 +350,7 @@ subCategoryView { name, values, show } =
                 else
                     []
     in
-    section
+    div
         [ class "sub-category__list" ]
         [ subCategoryHeader, subCategoryItems ]
 
@@ -360,62 +361,56 @@ subCategoriesView subCategories =
         List.map subCategoryView subCategories
 
 
-searchErrorClass : Model -> String
-searchErrorClass model =
-    if model.searchLinksFound then
-        ""
-
-    else
-        " input__error"
-
-
 content : Model -> Html Msg
 content model =
     let
         searchBarClass =
-            "row-block input__search" ++ searchErrorClass model
+            if model.searchLinksFound then
+                "row input-text"
+
+            else
+                "row input-text input__error"
 
         searchBar =
             div
-                [ class searchBarClass ]
+                [ class searchBarClass, id "input-search" ]
                 [ input
                     [ placeholder "Buscar"
                     , type_ "text"
                     , spellcheck False
                     , onInput UpdateSearch
                     , type_ "text"
-                    , list "links-title"
-                    , id "input-search"
                     ]
                     []
                 ]
 
         inputAdd =
-            div [ class "row-block input__url" ]
+            div [ class "row input-search", id "input-add" ]
                 [ input
                     [ placeholder "http:// ou https://"
                     , type_ "text"
+                    , spellcheck False
                     ]
                     []
                 ]
 
         searchResult =
-            lazy2 linksView model.searchLinks "group__searched"
+            lazy linksView model.searchLinks
 
         currentCategoryTitle =
-            div [ class "row-block main__category" ]
+            div [ class "row", id "category-title" ]
                 [ text model.currentTitle ]
 
         subCategoriesList =
             lazy subCategoriesView model.currentSubCategories
 
         baseLinksView =
-            lazy2 linksView model.currentLinks "group__link"
+            lazy linksView model.currentLinks
 
         spaceBlock =
-            div [ class "row-block" ] []
+            div [ class "row" ] []
     in
-    main_ []
+    div [ id "content" ]
         [ searchBar
         , inputAdd
         , searchResult
