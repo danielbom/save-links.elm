@@ -11,6 +11,7 @@ import Html.Lazy exposing (lazy)
 import Json.Decode as Decode
 import Platform.Cmd exposing (Cmd)
 import Task
+import Utils exposing (..)
 
 
 main : Program Flags Model Msg
@@ -287,8 +288,7 @@ sidebar model =
 
 favicon : String -> String
 favicon url =
-    -- TODO: Optimize url to search icon
-    "https://www.google.com/s2/favicons?domain=" ++ url
+    "https://www.google.com/s2/favicons?domain=" ++ optimizeFavicon url
 
 
 linkView : Link -> Html Msg
