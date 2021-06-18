@@ -145,12 +145,13 @@ a {
   outline: none;
 
   height: 40px;
-  width: 50%;
+  width: max(50%, min(400px, 100%));
 
   padding: 0 4px;
   margin-right: 4px;
 }
 
+.empty-block,
 .row {
   padding: 0 12px;
 
@@ -288,4 +289,13 @@ a {
 .sub-category__title ,
 .link__title {
   transition: color 0.24s ease-in-out;
+}
+
+/* burger */
+
+.menu-btn__burger,
+.menu-btn__burger::before,
+.menu-btn__burger::after {
+  background: #546EFF;
+  box-shadow: 0 2px 5px #546EFF;
 }

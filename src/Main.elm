@@ -73,6 +73,9 @@ type alias Model =
 
     -- Dark Mode
     , darkModeEnable : Bool
+
+    -- Responsive
+    , menuIsOpen : Bool
     }
 
 
@@ -82,6 +85,7 @@ type Msg
     | FavoriteCategory
     | WithoutCategory
     | ToggleDarkMode
+    | ToggleMenu
       -- Search with debounce
     | UpdateSearch String
     | DebounceSearch Debounce.Msg
@@ -117,6 +121,7 @@ init flags =
       , currentSubCategories = currentCategory.subCategories
       , currentTitle = currentCategory.name
       , darkModeEnable = flags.state.darkModeEnable
+      , menuIsOpen = False
 
       -- search
       , searchOnFocus = False
@@ -136,7 +141,8 @@ init flags =
 view : Model -> Html Msg
 view model =
     div [ id "page" ]
-        [ sidebar model
+        [ burger model
+        , sidebar model
         , content model
         ]
 
@@ -201,9 +207,32 @@ categorySidebar category =
             [ text title ]
 
 
+titleLink : Html Msg
+titleLink =
+    a
+        [ id "page-title"
+        , class "pointer"
+        , target "_blank"
+        , href "https://repl.it/@danielbom/SaveLinks"
+        ]
+        [ text "Save Links" ]
+
+
+spaceBlock : Html Msg
+spaceBlock =
+    div [ class "empty-block" ] []
+
+
 sidebar : Model -> Html Msg
 sidebar model =
     let
+        sidebarClass =
+            if model.menuIsOpen then
+                ""
+
+            else
+                "close"
+
         darkOrLightMode =
             if model.darkModeEnable then
                 "🌔 Light Mode"
@@ -216,15 +245,6 @@ sidebar model =
                 ++ " links e "
                 ++ (model.categories |> List.length |> String.fromInt)
                 ++ " categorias"
-
-        titleLink =
-            a
-                [ id "page-title"
-                , class "pointer"
-                , target "_blank"
-                , href "https://repl.it/@danielbom/SaveLinks"
-                ]
-                [ text "Save Links" ]
 
         toggleDarkModeButton =
             div []
@@ -278,13 +298,14 @@ sidebar model =
                 [ text infoText ]
     in
     div
-        [ id "sidebar" ]
+        [ id "sidebar", class sidebarClass ]
         [ titleLink
         , toggleDarkModeButton
         , specialCategories
         , categoriesList
         , plusSection
         , informations
+        , spaceBlock
         ]
 
 
@@ -366,6 +387,13 @@ subCategoriesView subCategories =
 content : Model -> Html Msg
 content model =
     let
+        contentClass =
+            if model.menuIsOpen then
+                "close"
+
+            else
+                ""
+
         searchBarClass =
             if model.searchLinksFound then
                 "row input-text"
@@ -409,11 +437,8 @@ content model =
 
         baseLinksView =
             lazy linksView model.currentLinks
-
-        spaceBlock =
-            div [ class "row" ] []
     in
-    div [ id "content" ]
+    div [ id "content", class contentClass ]
         [ searchBar
         , inputAdd
         , searchResult
@@ -421,6 +446,27 @@ content model =
         , subCategoriesList
         , baseLinksView
         , spaceBlock
+        ]
+
+
+burger : Model -> Html Msg
+burger model =
+    let
+        burgerClass =
+            if model.menuIsOpen then
+                "menu-btn open"
+
+            else
+                "menu-btn"
+
+        burderMenu =
+            div
+                [ class burgerClass, onClick ToggleMenu ]
+                [ div [ class "menu-btn__burger" ] [] ]
+    in
+    div [ id "header", class "row" ]
+        [ titleLink
+        , burderMenu
         ]
 
 
@@ -525,6 +571,7 @@ update msg model =
                 | currentTitle = category.name
                 , currentLinks = category.values
                 , currentSubCategories = category.subCategories
+                , menuIsOpen = False
               }
             , Cmd.none
             )
@@ -534,6 +581,7 @@ update msg model =
                 | currentTitle = "Favoritos"
                 , currentLinks = model.favorites
                 , currentSubCategories = []
+                , menuIsOpen = False
               }
             , Cmd.none
             )
@@ -543,15 +591,20 @@ update msg model =
                 | currentTitle = "Sem categoria"
                 , currentLinks = model.withoutCategory
                 , currentSubCategories = []
+                , menuIsOpen = False
               }
             , Cmd.none
             )
 
+        -- Others
         ToggleDarkMode ->
-            ( { model
-                | darkModeEnable = not model.darkModeEnable
-              }
+            ( { model | darkModeEnable = not model.darkModeEnable }
             , toggleDarkMode (not model.darkModeEnable)
+            )
+
+        ToggleMenu ->
+            ( { model | menuIsOpen = not model.menuIsOpen }
+            , Cmd.none
             )
 
         -- Search
@@ -611,7 +664,7 @@ update msg model =
             in
             ( { model | searchOnFocus = False }, doBlur )
 
-        PressedKey "F" ->
+        PressedKey "q" ->
             -- Focus the input if "Shift + F" was pressed
             let
                 ( focus, doFocus ) =

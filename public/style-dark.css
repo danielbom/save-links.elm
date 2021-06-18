@@ -92,3 +92,10 @@
 .dark .sub-category__icon {
   filter: invert(0.5);
 }
+
+.dark .menu-btn__burger,
+.dark .menu-btn__burger::before,
+.dark .menu-btn__burger::after {
+  background: #03A9F4;
+  box-shadow: 0 2px 5px #03A9F4;
+}
